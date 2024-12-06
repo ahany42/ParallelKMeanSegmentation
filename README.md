@@ -1,10 +1,10 @@
 # ParallelKMeansSegmentation
 
-This project implements parallel grayscale image segmentation using the 1D K-Means algorithm with MPI (Message Passing Interface) in C++. It processes grayscale images by clustering pixel intensities to generate segmented images with distinct grayscale shades.
+This project implements parallel grayscale image segmentation using the 1D K-Means algorithm with MPI (Message Passing Interface) in C++. It processes grayscale or rgb images by clustering pixel intensities to generate segmented images with distinct grayscale shades.
 
 ## Overview
 Image segmentation is the process of separating different objects in an image based on pixel intensities or other attributes. This project focuses on:
-- Reading a grayscale image as input.
+- Reading a grayscale or rgb image as input.
 - Clustering pixel intensities using K-Means with a specified number of clusters (e.g., 3 for three regions).
 - Replacing pixels in each cluster with the mean intensity of that cluster to produce the final segmented image.
 
@@ -34,6 +34,6 @@ Image segmentation is the process of separating different objects in an image ba
 ## Usage
 Run the program with MPI:
    ```bash
-   mpiexec -n 4 program.exe
+   mpiexec -n 4 ParallelKMeanSegmentation.exe
 
 
