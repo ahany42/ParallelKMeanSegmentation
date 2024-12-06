@@ -15,7 +15,7 @@ Image segmentation is the process of separating different objects in an image ba
 *Sample grayscale image provided as input.*
 
 #### Output Image
-![Output Image](output.png)  
+![Output Image](Output.png)  
 *The segmented grayscale image with distinct shades.*
 
 ## Features
