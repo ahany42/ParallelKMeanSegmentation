@@ -125,7 +125,7 @@ int main()
 	double TotalTime = 0.0;
 	System::String^ imagePath;
 	string img;
-	img = "C:\\Users\\Aly Hany\\Downloads\\input.jpeg";
+	img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
 	imagePath = marshal_as<System::String^>(img);
 	int* imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
 	//Parallized Code
