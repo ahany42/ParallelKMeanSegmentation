@@ -93,7 +93,6 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
 	int* SegmentedImage = new int[NumberOfPxs];
-	cout << min << " " << max << endl;
 	for (int i = 0; i < (NumberOfPxs); i++) {
 		SegmentedImage[i] = OriginalLocalImage[i];
 	}
