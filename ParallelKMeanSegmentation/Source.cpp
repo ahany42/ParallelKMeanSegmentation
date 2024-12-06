@@ -101,15 +101,15 @@ int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int mi
 		int DistanceToFirstCluster = abs(SegmentedImage[i] - clusters[0]);
 		int DistanceToSecondCluster = abs(SegmentedImage[i] - clusters[1]);
 		int DistanceToThirdCluster = abs(SegmentedImage[i] - clusters[2]);
-		if (SegmentedImage[i] < max / 3)
+		if (SegmentedImage[i] < clusters[2] / 3)
 		{
-			SegmentedImage[i] = min;
+			SegmentedImage[i] = clusters[0];
 		}
-		else if (SegmentedImage[i] < 2 * max / 3) {
-			SegmentedImage[i] = max / 2;
+		else if (SegmentedImage[i] < 2 * clusters[2] / 3) {
+			SegmentedImage[i] = clusters[1];
 		}
 		else {
-			SegmentedImage[i] = max;
+			SegmentedImage[i] = clusters[2];
 		}
 	}
 	return SegmentedImage;
