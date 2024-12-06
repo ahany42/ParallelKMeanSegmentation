@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include<string.h>
 #include<msclr\marshal_cppstd.h>
-#include <ctime>// include this header 
+#include <ctime>
 #pragma once
 
 #using <mscorlib.dll>
@@ -14,16 +14,10 @@
 using namespace std;
 using namespace msclr::interop;
 
-int* inputImage(int* w, int* h, System::String^ imagePath) //put the size of image in w & h
+int* InputImage(int* w, int* h, System::String^ imagePath)
 {
 	int* input;
-
-
 	int OriginalImageWidth, OriginalImageHeight;
-
-	//Read Image and save it to local arrayss************************	
-	//Read Image and save it to local arrayss
-
 	System::Drawing::Bitmap BM(imagePath);
 
 	OriginalImageWidth = BM.Width;
@@ -44,7 +38,7 @@ int* inputImage(int* w, int* h, System::String^ imagePath) //put the size of ima
 			Blue[i * BM.Width + j] = c.B;
 			Green[i * BM.Width + j] = c.G;
 
-			input[i * BM.Width + j] = ((c.R + c.B + c.G) / 3); //gray scale value equals the average of RGB values
+			input[i * BM.Width + j] = ((c.R + c.B + c.G) / 3);
 
 		}
 
@@ -53,7 +47,7 @@ int* inputImage(int* w, int* h, System::String^ imagePath) //put the size of ima
 }
 
 
-void createImage(int* image, int width, int height, int index)
+void CreateImage(int* image, int width, int height)
 {
 	System::Drawing::Bitmap MyNewImage(width, height);
 
@@ -62,7 +56,7 @@ void createImage(int* image, int width, int height, int index)
 	{
 		for (int j = 0; j < MyNewImage.Width; j++)
 		{
-			//i * OriginalImageWidth + j
+
 			if (image[i * width + j] < 0)
 			{
 				image[i * width + j] = 0;
@@ -75,19 +69,19 @@ void createImage(int* image, int width, int height, int index)
 			MyNewImage.SetPixel(j, i, c);
 		}
 	}
-	MyNewImage.Save("C:\\Users\\Aly Hany\\Downloads\\Output" + index + ".png");
-	cout << "result Image Saved " << index << endl;
+	MyNewImage.Save("C:\\Users\\Aly Hany\\Downloads\\Output"  + ".png");
+	cout << "result Image Saved " <<endl;
 }
-int minOfThree(int a, int b, int c) {
+int MinOfThree(int a, int b, int c) {
 	if (a < c && a < b) return a;
 	if (c < a && c < b) return c;
 	return b;
 }
-void findMinMax(int arr[], int size, int& min, int& max) {
-	min = arr[0]; // Initialize min to the first element
-	max = arr[0]; // Initialize max to the first element
+void FindMinMax(int arr[], int size, int& min, int& max) {
+	min = arr[0];
+	max = arr[0];
 
-	for (int i = 1; i < size; i++) { // Start from the second element
+	for (int i = 1; i < size; i++) {
 		if (arr[i] < min) {
 			min = arr[i];
 		}
@@ -95,64 +89,68 @@ void findMinMax(int arr[], int size, int& min, int& max) {
 			max = arr[i];
 		}
 	}
+
 }
-void ImageGrayScaleSegmentationParallized(int* OriginalImage, int Width, int Height) {
-	cout << "Hello" << endl;
-}
-void ImageGrayScaleSegmentation(int* OriginalImage, int Width, int Height) {
-	int* SegmentedImage = new int[Width * Height];
-	
-	for (int i = 0; i <(Width * Height); i++) {
-		SegmentedImage[i] = OriginalImage[i] ;
-		
+int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
+	int* SegmentedImage = new int[NumberOfPxs];
+	cout << min << " " << max << endl;
+	for (int i = 0; i < (NumberOfPxs); i++) {
+		SegmentedImage[i] = OriginalLocalImage[i];
 	}
-	int min = 0;
-	int max = 0;
-	findMinMax(OriginalImage, Width * Height,min,max);
-	int clusters[3] = {min,(max+min)/2,max};
-	int counter = 0;
-	for (int i = 0; i < (Width * Height); i++) {
+	int clusters[3] = { min,(max + min) / 2,max };
+	for (int i = 0; i < (NumberOfPxs); i++) {
 		int DistanceToFirstCluster = abs(SegmentedImage[i] - clusters[0]);
-		int DistanceToSecondCluster =abs(SegmentedImage[i] - clusters[1]);
-		int DistanceToThirdCluster =abs(SegmentedImage[i] - clusters[2]);
-		if(SegmentedImage[i]<max/3)
+		int DistanceToSecondCluster = abs(SegmentedImage[i] - clusters[1]);
+		int DistanceToThirdCluster = abs(SegmentedImage[i] - clusters[2]);
+		if (SegmentedImage[i] < max / 3)
 		{
 			SegmentedImage[i] = min;
 		}
-		else if(SegmentedImage[i]<2*max/3) {
-		SegmentedImage[i] = max/2;
+		else if (SegmentedImage[i] < 2 * max / 3) {
+			SegmentedImage[i] = max / 2;
 		}
-	else{
-	    SegmentedImage[i] = max;
+		else {
+			SegmentedImage[i] = max;
 		}
-		counter = i;
 	}
-	createImage(SegmentedImage,Width,Height, 1);
+	return SegmentedImage;
 }
 int main()
 {
 	MPI_Init(NULL, NULL);
 	int rank, size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
 	int ImageWidth = 4, ImageHeight = 4;
-
 	int start_s, stop_s;
-    double TotalTime = 0.0;
-
+	double TotalTime = 0.0;
 	System::String^ imagePath;
-	std::string img;
-	img = "C:\\Users\\Aly Hany\\Downloads\\images.jpeg";
-
+	string img;
+	img = "C:\\Users\\Aly Hany\\Downloads\\input.jpeg";
 	imagePath = marshal_as<System::String^>(img);
-	int* imageData = inputImage(&ImageWidth, &ImageHeight, imagePath);
+	int* imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
+	//Parallized Code
 	start_s = clock();
-	ImageGrayScaleSegmentation(imageData, ImageWidth, ImageHeight);
-	stop_s = clock();
-	double SequentialTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
-	cout << "Time sequentially : " << SequentialTime << " ms" << endl;
+	int min = 0;
+	int max = 0;
+	if (rank == 0) {
+		FindMinMax(imageData, ImageWidth * ImageHeight, min, max);
+		
+	}
+	MPI_Bcast(&min, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&max, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	int* localImage = new int[(ImageHeight * ImageWidth) / size];
+	int* globalImage = new int[ImageHeight * ImageWidth];
+	
 
-	// Measure parallelized execution time
-	start_s = clock();
-	ImageGrayScaleSegmentationParallized(imageData, ImageWidth, ImageHeight);
+	MPI_Scatter(&imageData[rank], (ImageWidth * ImageHeight) / size, MPI_INT, localImage, (ImageHeight * ImageWidth) / size, MPI_INT, 0, MPI_COMM_WORLD);
+	localImage = ImageGrayScaleSegmentation(localImage, (ImageWidth * ImageHeight) / size, min, max);
+	MPI_Gather(localImage, (ImageWidth * ImageHeight) / size, MPI_INT, globalImage, (ImageWidth * ImageHeight) / size, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Barrier(MPI_COMM_WORLD);
+	if (rank == 0) {
+		CreateImage(globalImage, ImageWidth, ImageHeight);
+	}
+	
 	stop_s = clock();
 	double ParallelTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
 	cout << "Time parallelized : " << ParallelTime << " ms" << endl;
@@ -162,3 +160,8 @@ int main()
 	return 0;
 
 }
+
+
+
+
+
