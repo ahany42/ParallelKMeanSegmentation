@@ -123,11 +123,13 @@ int main()
 	int ImageWidth = 4, ImageHeight = 4;
 	int start_s, stop_s;
 	double TotalTime = 0.0;
-	System::String^ imagePath;
-	string img;
-	img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
-	imagePath = marshal_as<System::String^>(img);
-	int* imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
+	int* imageData;
+		System::String^ imagePath;
+		string img;
+	    img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
+		imagePath = marshal_as<System::String^>(img);
+		imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
+	
 	//Parallized Code
 	start_s = clock();
 	int min = 0;
@@ -145,14 +147,19 @@ int main()
 	MPI_Scatter(&imageData[rank], (ImageWidth * ImageHeight) / size, MPI_INT, localImage, (ImageHeight * ImageWidth) / size, MPI_INT, 0, MPI_COMM_WORLD);
 	localImage = ImageGrayScaleSegmentation(localImage, (ImageWidth * ImageHeight) / size, min, max);
 	MPI_Gather(localImage, (ImageWidth * ImageHeight) / size, MPI_INT, globalImage, (ImageWidth * ImageHeight) / size, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
+	stop_s = clock();
 	if (rank == 0) {
 		CreateImage(globalImage, ImageWidth, ImageHeight);
+		double ParallelTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
+		cout << "Time parallelized : " << ParallelTime << " ms" << endl;
+		//Sequential Time
+		start_s = clock();
+		ImageGrayScaleSegmentation(imageData, (ImageWidth * ImageHeight), min, max);
+		stop_s = clock();
+		double SequentialTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
+		cout << "Time Sequential : " << SequentialTime << " ms" << endl;
 	}
 	
-	stop_s = clock();
-	double ParallelTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
-	cout << "Time parallelized : " << ParallelTime << " ms" << endl;
 	free(imageData);
 
 	MPI_Finalize();
