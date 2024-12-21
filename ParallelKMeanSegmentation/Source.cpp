@@ -124,40 +124,50 @@ int main()
 	int start_s, stop_s;
 	double TotalTime = 0.0;
 	int* imageData;
-		System::String^ imagePath;
-		string img;
-	    img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
-		imagePath = marshal_as<System::String^>(img);
-		imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
+	System::String^ imagePath;
+	string img;
+	img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
+	imagePath = marshal_as<System::String^>(img);
+	imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
 	
 	//Parallized Code
 	start_s = clock();
-	int min = 0;
-	int max = 0;
-	if (rank == 0) {
-		FindMinMax(imageData, ImageWidth * ImageHeight, min, max);
-		
-	}
-	MPI_Bcast(&min, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&max, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	int* localImage = new int[(ImageHeight * ImageWidth) / size];
-	int* globalImage = new int[ImageHeight * ImageWidth];
-	
 
-	MPI_Scatter(&imageData[rank], (ImageWidth * ImageHeight) / size, MPI_INT, localImage, (ImageHeight * ImageWidth) / size, MPI_INT, 0, MPI_COMM_WORLD);
-	localImage = ImageGrayScaleSegmentation(localImage, (ImageWidth * ImageHeight) / size, min, max);
-	MPI_Gather(localImage, (ImageWidth * ImageHeight) / size, MPI_INT, globalImage, (ImageWidth * ImageHeight) / size, MPI_INT, 0, MPI_COMM_WORLD);
+	int localMin = INT_MAX;
+	int localMax = INT_MIN;
+	int globalMin;
+	int globalMax;
+	int segmentSize = (ImageHeight * ImageWidth) / size;
+	int* localImage = new int[segmentSize];
+	int* globalImage =nullptr;
+
+	if (rank == 0) {
+		globalImage = new int[ImageHeight * ImageWidth];
+	}
+
+	MPI_Scatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD);
+	FindMinMax(localImage, segmentSize, localMin, localMax);
+	MPI_Allreduce(&localMin, &globalMin, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+	MPI_Allreduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+	localImage = ImageGrayScaleSegmentation(localImage, segmentSize, globalMin, globalMax);
+	MPI_Gather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD);
+
 	stop_s = clock();
 	if (rank == 0) {
 		CreateImage(globalImage, ImageWidth, ImageHeight);
 		double ParallelTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
 		cout << "Time parallelized : " << ParallelTime << " ms" << endl;
+
 		//Sequential Time
 		start_s = clock();
+		int min = 0;
+		int max = 0;
+		FindMinMax(imageData, ImageWidth * ImageHeight, min, max);
 		ImageGrayScaleSegmentation(imageData, (ImageWidth * ImageHeight), min, max);
 		stop_s = clock();
 		double SequentialTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
 		cout << "Time Sequential : " << SequentialTime << " ms" << endl;
+		cout << "Speed Up Using " << size << " Threads is (Sequential Time/ Parallel Time) " << SequentialTime / ParallelTime << endl;
 	}
 	
 	free(imageData);
