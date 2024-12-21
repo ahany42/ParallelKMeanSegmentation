@@ -144,13 +144,16 @@ int main()
 	if (rank == 0) {
 		globalImage = new int[ImageHeight * ImageWidth];
 	}
-
-	MPI_Scatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Request scatterRequest;
+	MPI_Iscatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&scatterRequest);
+	MPI_Wait(&scatterRequest, MPI_STATUS_IGNORE);
 	FindMinMax(localImage, segmentSize, localMin, localMax);
 	MPI_Allreduce(&localMin, &globalMin, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 	MPI_Allreduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 	localImage = ImageGrayScaleSegmentation(localImage, segmentSize, globalMin, globalMax);
-	MPI_Gather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Request gatherRequest;
+	MPI_Igather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&gatherRequest);
+	MPI_Wait(&gatherRequest, MPI_STATUS_IGNORE);
 
 	stop_s = clock();
 	if (rank == 0) {
