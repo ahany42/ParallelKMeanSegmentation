@@ -88,9 +88,9 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
 	int clusters[3];
-	clusters[0] = rand() % max + min ;	
-	clusters[1] = rand() % max + min ;	
-	clusters[2] = rand() % max + min ;
+	clusters[0] = min ;	
+	clusters[1] = (max + min)/2 ;	
+	clusters[2] = max ;
 	int previousClusters[3] = { 0,0,0 };
 	int sum[3] = { 0, 0, 0 };
 	int count[3] = { 0, 0, 0 };
@@ -101,19 +101,19 @@ int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int mi
 			int DistanceToThirdCluster = abs(OriginalLocalImage[j] - clusters[2]);
 
 			if (DistanceToFirstCluster <= DistanceToSecondCluster && DistanceToFirstCluster <= DistanceToThirdCluster) {
-				OriginalLocalImage[j] = clusters[0];
-				sum[0] += OriginalLocalImage[j];
+				OriginalLocalImage[i] = clusters[0];
+				sum[0] += OriginalLocalImage[i];
 				count[0]++;
 			}
 			else if (DistanceToSecondCluster <= DistanceToFirstCluster && DistanceToSecondCluster <= DistanceToThirdCluster) {
-				OriginalLocalImage[j] = clusters[1];
-				sum[0] += OriginalLocalImage[j];
-				count[0]++;
+				OriginalLocalImage[i] = clusters[1];
+				sum[1]= OriginalLocalImage[i];
+				count[1]++;
 			}
 			else {
-				OriginalLocalImage[j] = clusters[2];
-				sum[0] += OriginalLocalImage[j];
-				count[0]++;
+				OriginalLocalImage[i] = clusters[2];
+				sum[2] += OriginalLocalImage[i];
+				count[2]++;
 			}
 		}
 
@@ -124,7 +124,7 @@ int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int mi
 			}
 		}
 		if (clusters[0] == previousClusters[0] && clusters[1] == previousClusters[1] && clusters[2] == previousClusters[2]) {
-			break; 
+			break;
 		}
 	}
 
@@ -142,7 +142,7 @@ int main()
 	int* imageData;
 	System::String^ imagePath;
 	string img;
-	img = "C:\\Users\\Aly Hany\\Downloads\\Input.jpg";
+	img = "C:\\Users\\Aly Hany\\Downloads\\input.jpg";
 	imagePath = marshal_as<System::String^>(img);
 	imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
 	
@@ -164,9 +164,9 @@ int main()
 	MPI_Iscatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&scatterRequest);
 	MPI_Wait(&scatterRequest, MPI_STATUS_IGNORE);
 	FindMinMax(localImage, segmentSize, localMin, localMax);
-	MPI_Allreduce(&localMin, &globalMin, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&localMin, &globalMin, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 	MPI_Allreduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-	localImage = ImageGrayScaleSegmentation(localImage, segmentSize, globalMin, globalMax);
+	localImage = ImageGrayScaleSegmentation(localImage, segmentSize, globalMin,globalMax);
 	MPI_Request gatherRequest;
 	MPI_Igather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&gatherRequest);
 	MPI_Wait(&gatherRequest, MPI_STATUS_IGNORE);
