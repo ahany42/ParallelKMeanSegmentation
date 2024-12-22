@@ -72,11 +72,6 @@ void CreateImage(int* image, int width, int height)
 	MyNewImage.Save("C:\\Users\\Aly Hany\\Downloads\\Output"  + ".png");
 	cout << "result Image Saved " <<endl;
 }
-int MinOfThree(int a, int b, int c) {
-	if (a < c && a < b) return a;
-	if (c < a && c < b) return c;
-	return b;
-}
 void FindMinMax(int arr[], int size, int& min, int& max) {
 	min = arr[0];
 	max = arr[0];
@@ -92,9 +87,11 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
-	int clusters[3] = { min,(max + min) / 2,max };
+	int clusters[3] = { min,(min+max)/2,max};
 	int previousClusters[3] = { 0,0,0 };
-	for (int i = 0; i < 10; i++) {
+	int sum[3] = { 0, 0, 0 };
+	int count[3] = { 0, 0, 0 };
+	for (int i = 0; i < 100; i++) {
 		for (int j = 0; j < NumberOfPxs; j++) {
 			int DistanceToFirstCluster = abs(OriginalLocalImage[j] - clusters[0]);
 			int DistanceToSecondCluster = abs(OriginalLocalImage[j] - clusters[1]);
@@ -102,28 +99,18 @@ int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int mi
 
 			if (DistanceToFirstCluster <= DistanceToSecondCluster && DistanceToFirstCluster <= DistanceToThirdCluster) {
 				OriginalLocalImage[j] = clusters[0];
+				sum[0] += OriginalLocalImage[j];
+				count[0]++;
 			}
 			else if (DistanceToSecondCluster <= DistanceToFirstCluster && DistanceToSecondCluster <= DistanceToThirdCluster) {
 				OriginalLocalImage[j] = clusters[1];
+				sum[0] += OriginalLocalImage[j];
+				count[0]++;
 			}
 			else {
 				OriginalLocalImage[j] = clusters[2];
-			}
-		}
-		int sum[3] = {0, 0, 0};
-		int count[3] = { 0, 0, 0 };
-		for (int i = 0; i < NumberOfPxs; i++) {
-			if (OriginalLocalImage[i] == clusters[0]) {
-				sum[0] += OriginalLocalImage[i];
+				sum[0] += OriginalLocalImage[j];
 				count[0]++;
-			}
-			else if (OriginalLocalImage[i] == clusters[1]) {
-				sum[1] += OriginalLocalImage[i];
-				count[1]++;
-			}
-			else if (OriginalLocalImage[i] == clusters[2]) {
-				sum[2] += OriginalLocalImage[i];
-				count[2]++;
 			}
 		}
 
@@ -133,7 +120,6 @@ int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int mi
 				clusters[c] = sum[c] / count[c]; 
 			}
 		}
-
 		if (clusters[0] == previousClusters[0] && clusters[1] == previousClusters[1] && clusters[2] == previousClusters[2]) {
 			break; 
 		}
@@ -158,8 +144,6 @@ int main()
 	imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
 	
 	//Parallized Code
-	start_s = clock();
-
 	int localMin = INT_MAX;
 	int localMax = INT_MIN;
 	int globalMin;
@@ -172,6 +156,7 @@ int main()
 		globalImage = new int[ImageHeight * ImageWidth];
 	}
 
+	start_s = clock();
 	MPI_Request scatterRequest;
 	MPI_Iscatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&scatterRequest);
 	MPI_Wait(&scatterRequest, MPI_STATUS_IGNORE);
@@ -182,14 +167,14 @@ int main()
 	MPI_Request gatherRequest;
 	MPI_Igather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&gatherRequest);
 	MPI_Wait(&gatherRequest, MPI_STATUS_IGNORE);
-
 	stop_s = clock();
+
 	if (rank == 0) {
 		CreateImage(globalImage, ImageWidth, ImageHeight);
 		double ParallelTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
 		cout << "Time parallelized : " << ParallelTime << " ms" << endl;
 
-		//Sequential Time
+		//Sequential Code
 		start_s = clock();
 		int min = 0;
 		int max = 0;
