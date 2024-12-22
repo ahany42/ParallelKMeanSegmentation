@@ -87,7 +87,10 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
-	int clusters[3] = { min,(min+max)/2,max};
+	int clusters[3];
+	clusters[0] = rand() % max + min ;	
+	clusters[1] = rand() % max + min ;	
+	clusters[2] = rand() % max + min ;
 	int previousClusters[3] = { 0,0,0 };
 	int sum[3] = { 0, 0, 0 };
 	int count[3] = { 0, 0, 0 };
