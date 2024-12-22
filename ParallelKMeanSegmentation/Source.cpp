@@ -175,7 +175,7 @@ int main()
 	MPI_Request gatherRequest;
 	MPI_Igather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&gatherRequest);
 	MPI_Wait(&gatherRequest, MPI_STATUS_IGNORE);
-	stop_s = clock(); cout << "local min " << localMin << endl;
+	stop_s = clock(); 
 
 	if (rank == 0) {
 		CreateImage(globalImage, ImageWidth, ImageHeight);
