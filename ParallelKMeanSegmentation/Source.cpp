@@ -88,13 +88,15 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
 	int clusters[3];
-	clusters[0] = min ;	
-	clusters[1] = (max + min)/2 ;	
-	clusters[2] = max ;
+	//intially random number between min and max
+	clusters[0] = rand() % max + min ;	
+	clusters[1] = rand() % max + min ;
+	clusters[2] = rand() % max + min ;
 	int previousClusters[3] = { 0,0,0 };
 	int sum[3] = { 0, 0, 0 };
 	int count[3] = { 0, 0, 0 };
-	for (int i = 0; i < 100; i++) {
+	int iterations = 100;
+	for (int i = 0; i < iterations; i++) {
 		for (int j = 0; j < NumberOfPxs; j++) {
 			int DistanceToFirstCluster = abs(OriginalLocalImage[j] - clusters[0]);
 			int DistanceToSecondCluster = abs(OriginalLocalImage[j] - clusters[1]);
@@ -146,7 +148,7 @@ int main()
 	imagePath = marshal_as<System::String^>(img);
 	imageData = InputImage(&ImageWidth, &ImageHeight, imagePath);
 	
-	//Parallized Code
+	
 	int localMin = INT_MAX;
 	int localMax = INT_MIN;
 	int globalMin;
@@ -159,18 +161,21 @@ int main()
 		globalImage = new int[ImageHeight * ImageWidth];
 	}
 
+	//Parallized Code
 	start_s = clock();
 	MPI_Request scatterRequest;
 	MPI_Iscatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&scatterRequest);
 	MPI_Wait(&scatterRequest, MPI_STATUS_IGNORE);
+
 	FindMinMax(localImage, segmentSize, localMin, localMax);
     MPI_Allreduce(&localMin, &globalMin, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 	MPI_Allreduce(&localMax, &globalMax, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
 	localImage = ImageGrayScaleSegmentation(localImage, segmentSize, globalMin,globalMax);
 	MPI_Request gatherRequest;
 	MPI_Igather(localImage, segmentSize, MPI_INT, globalImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&gatherRequest);
 	MPI_Wait(&gatherRequest, MPI_STATUS_IGNORE);
-	stop_s = clock();
+	stop_s = clock(); cout << "local min " << localMin << endl;
 
 	if (rank == 0) {
 		CreateImage(globalImage, ImageWidth, ImageHeight);
@@ -179,10 +184,10 @@ int main()
 
 		//Sequential Code
 		start_s = clock();
-		int min = 0;
-		int max = 0;
-		FindMinMax(imageData, ImageWidth * ImageHeight, min, max);
-		ImageGrayScaleSegmentation(imageData, (ImageWidth * ImageHeight), min, max);
+		int sequentialMin = 0;
+		int sequentialMax = 0;
+		FindMinMax(imageData, ImageWidth * ImageHeight, sequentialMin, sequentialMax);
+		ImageGrayScaleSegmentation(imageData, (ImageWidth * ImageHeight), sequentialMin, sequentialMax);
 		stop_s = clock();
 		double SequentialTime = (stop_s - start_s) / double(CLOCKS_PER_SEC) * 1000;
 		cout << "Time Sequential : " << SequentialTime << " ms" << endl;
