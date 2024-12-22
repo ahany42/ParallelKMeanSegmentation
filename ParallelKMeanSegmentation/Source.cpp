@@ -92,27 +92,54 @@ void FindMinMax(int arr[], int size, int& min, int& max) {
 
 }
 int* ImageGrayScaleSegmentation(int* OriginalLocalImage, int NumberOfPxs, int min, int max) {
-	int* SegmentedImage = new int[NumberOfPxs];
-	for (int i = 0; i < (NumberOfPxs); i++) {
-		SegmentedImage[i] = OriginalLocalImage[i];
-	}
 	int clusters[3] = { min,(max + min) / 2,max };
-	for (int i = 0; i < (NumberOfPxs); i++) {
-		int DistanceToFirstCluster = abs(SegmentedImage[i] - clusters[0]);
-		int DistanceToSecondCluster = abs(SegmentedImage[i] - clusters[1]);
-		int DistanceToThirdCluster = abs(SegmentedImage[i] - clusters[2]);
-		if (SegmentedImage[i] < clusters[2] / 3)
-		{
-			SegmentedImage[i] = clusters[0];
+	int previousClusters[3] = { 0,0,0 };
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < NumberOfPxs; j++) {
+			int DistanceToFirstCluster = abs(OriginalLocalImage[j] - clusters[0]);
+			int DistanceToSecondCluster = abs(OriginalLocalImage[j] - clusters[1]);
+			int DistanceToThirdCluster = abs(OriginalLocalImage[j] - clusters[2]);
+
+			if (DistanceToFirstCluster <= DistanceToSecondCluster && DistanceToFirstCluster <= DistanceToThirdCluster) {
+				OriginalLocalImage[j] = clusters[0];
+			}
+			else if (DistanceToSecondCluster <= DistanceToFirstCluster && DistanceToSecondCluster <= DistanceToThirdCluster) {
+				OriginalLocalImage[j] = clusters[1];
+			}
+			else {
+				OriginalLocalImage[j] = clusters[2];
+			}
 		}
-		else if (SegmentedImage[i] < 2 * clusters[2] / 3) {
-			SegmentedImage[i] = clusters[1];
+		int sum[3] = {0, 0, 0};
+		int count[3] = { 0, 0, 0 };
+		for (int i = 0; i < NumberOfPxs; i++) {
+			if (OriginalLocalImage[i] == clusters[0]) {
+				sum[0] += OriginalLocalImage[i];
+				count[0]++;
+			}
+			else if (OriginalLocalImage[i] == clusters[1]) {
+				sum[1] += OriginalLocalImage[i];
+				count[1]++;
+			}
+			else if (OriginalLocalImage[i] == clusters[2]) {
+				sum[2] += OriginalLocalImage[i];
+				count[2]++;
+			}
 		}
-		else {
-			SegmentedImage[i] = clusters[2];
+
+		for (int c = 0; c < 3; c++) {
+			if (count[c] > 0) {
+				previousClusters[c] = clusters[c];
+				clusters[c] = sum[c] / count[c]; 
+			}
+		}
+
+		if (clusters[0] == previousClusters[0] && clusters[1] == previousClusters[1] && clusters[2] == previousClusters[2]) {
+			break; 
 		}
 	}
-	return SegmentedImage;
+
+	return OriginalLocalImage;
 }
 int main()
 {
@@ -144,6 +171,7 @@ int main()
 	if (rank == 0) {
 		globalImage = new int[ImageHeight * ImageWidth];
 	}
+
 	MPI_Request scatterRequest;
 	MPI_Iscatter(imageData, segmentSize, MPI_INT, localImage, segmentSize, MPI_INT, 0, MPI_COMM_WORLD,&scatterRequest);
 	MPI_Wait(&scatterRequest, MPI_STATUS_IGNORE);
