@@ -21,7 +21,6 @@ Image segmentation is the process of separating different objects in an image ba
 ## Features
 - **Parallel Processing**: Efficient image segmentation using multiple processes with MPI.
 - **K-Means Clustering**: Groups pixel intensities into distinct clusters for simplified visual representation.
-- **Dynamic Clustering**: Configurable number of clusters (K) to suit various image segmentation needs.
 - **Intensity Scaling**: Maps clustered pixel values to their respective mean intensities for clearer segmentation.
 - **Support for Large Images**: Handles high-resolution grayscale images efficiently with parallel computation.
 
